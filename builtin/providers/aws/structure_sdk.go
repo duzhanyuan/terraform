@@ -5,6 +5,7 @@ import (
 
 	"github.com/awslabs/aws-sdk-go/aws"
 	"github.com/awslabs/aws-sdk-go/service/ec2"
+	"github.com/awslabs/aws-sdk-go/service/cloudformation"
 	"github.com/hashicorp/aws-sdk-go/gen/elb"
 	"github.com/hashicorp/aws-sdk-go/gen/rds"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -252,4 +253,33 @@ func flattenAttachmentSDK(a *ec2.NetworkInterfaceAttachment) map[string]interfac
 	att["device_index"] = *a.DeviceIndex
 	att["attachment_id"] = *a.AttachmentID
 	return att
+}
+
+// Takes the result of flatmap.Expand for an array of CloudFormation
+// parameters and returns CloudFormation Parameter API compatible objects
+// CF_TODO: Should the function name include SDK or not?
+func expandCloudFormationParametersSDK(configured []interface{}) ([]*cloudformation.Parameter, error) {
+	parameters := make([]*cloudformation.Parameter, 0, len(configured))
+
+	// Loop over our configured parameters and create
+	// an array of aws-sdk-go compatabile objects
+	for _, pRaw := range configured {
+		data := pRaw.(map[string]interface{})
+
+		// CF_TODO: Which way is preferred below?
+		// parameters = append(parameters, cloudformation.Parameter{
+			// ParameterKey:     aws.String(data["key"].(string)),
+			// ParameterValue:   aws.String(data["value"].(string)),
+			// UsePreviousValue: aws.String(data["use_previous_value"].(bool)),
+			// })
+		p := &cloudformation.Parameter{
+			ParameterKey:     aws.String(data["key"].(string)),
+			ParameterValue:   aws.String(data["value"].(string)),
+			UsePreviousValue: aws.Boolean(data["use_previous_value"].(bool)),
+		}
+
+		parameters = append(parameters, p)
+	}
+
+	return parameters, nil
 }

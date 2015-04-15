@@ -15,8 +15,9 @@ import (
 	"github.com/hashicorp/aws-sdk-go/gen/route53"
 	"github.com/hashicorp/aws-sdk-go/gen/s3"
 
-	awsSDK "github.com/awslabs/aws-sdk-go/aws"
-	awsEC2 "github.com/awslabs/aws-sdk-go/service/ec2"
+	awsSDK            "github.com/awslabs/aws-sdk-go/aws"
+	awsEC2            "github.com/awslabs/aws-sdk-go/service/ec2"
+	awsCloudFormation "github.com/awslabs/aws-sdk-go/service/cloudformation"
 )
 
 type Config struct {
@@ -27,15 +28,17 @@ type Config struct {
 }
 
 type AWSClient struct {
-	ec2conn         *ec2.EC2
-	elbconn         *elb.ELB
-	autoscalingconn *autoscaling.AutoScaling
-	s3conn          *s3.S3
-	r53conn         *route53.Route53
-	region          string
-	rdsconn         *rds.RDS
-	iamconn         *iam.IAM
-	ec2SDKconn      *awsEC2.EC2
+	ec2conn               *ec2.EC2
+	elbconn               *elb.ELB
+	autoscalingconn       *autoscaling.AutoScaling
+	s3conn                *s3.S3
+	r53conn               *route53.Route53
+	region                string
+	rdsconn               *rds.RDS
+	iamconn               *iam.IAM
+	ec2SDKconn            *awsEC2.EC2
+	// CF_TODO: Do I need SDK in name for CloudFormation?
+	cloudformationSDKconn *awsCloudFormation.CloudFormation
 }
 
 // Client configures and returns a fully initailized AWSClient
@@ -79,7 +82,15 @@ func (c *Config) Client() (interface{}, error) {
 		client.iamconn = iam.New(creds, c.Region, nil)
 
 		sdkCreds := awsSDK.DetectCreds(c.AccessKey, c.SecretKey, c.Token)
+
+		log.Println("[INFO] Initializing EC2 SDK Connection")
 		client.ec2SDKconn = awsEC2.New(&awsSDK.Config{
+			Credentials: sdkCreds,
+			Region:      c.Region,
+		})
+
+		log.Println("[INFO] Initializing CloudFormation SDK Connection")
+		client.cloudformationSDKconn = awsCloudFormation.New(&awsSDK.Config{
 			Credentials: sdkCreds,
 			Region:      c.Region,
 		})
