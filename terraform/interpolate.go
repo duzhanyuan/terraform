@@ -85,6 +85,9 @@ func (i *Interpolater) valueCountVar(
 	result map[string]ast.Variable) error {
 	switch v.Type {
 	case config.CountValueIndex:
+		if scope.Resource == nil {
+			return fmt.Errorf("%s: bad context for count.index", n)
+		}
 		result[n] = ast.Variable{
 			Value: scope.Resource.CountIndex,
 			Type:  ast.TypeInt,
